@@ -44,7 +44,7 @@ Access tokens are valid for 60 days. Refresh tokens are valid for 365 days from 
 
 ### Step 4: Find your organization ID
 
-Open your LinkedIn Page's admin view. The numeric value in the URL is your organization ID. For example, in `https://www.linkedin.com/company/123456789/admin/`, the organization ID is `123456789`.
+The connector needs the numeric organization ID that LinkedIn uses in organization URNs (`urn:li:organization:{id}`), such as `123456789`. This isn't the same as your Page's vanity name. If you only know the vanity name, you can look up the ID with the [Organization Lookup API](https://learn.microsoft.com/en-us/linkedin/marketing/community-management/organizations/organization-lookup-api?view=li-lms-2026-08).
 
 ### Step 5: Set up the connector in Airbyte
 
