@@ -173,8 +173,8 @@ This source syncs data using the [Shopify REST API](https://shopify.dev/api/admi
 - [Shop](https://shopify.dev/api/admin-rest/latest/resources/shop)
 - [Smart Collections](https://shopify.dev/api/admin-rest/latest/resources/smartcollection)
 - [Tender Transactions](https://shopify.dev/api/admin-rest/latest/resources/tendertransaction)
-- [Transactions](https://shopify.dev/api/admin-rest/latest/resources/transaction#top)
-- [Transactions (GraphQL)](https://shopify.dev/docs/api/admin-graphql/latest/objects/OrderTransaction)
+- [Transactions](https://shopify.dev/api/admin-rest/latest/resources/transaction#top) — Used for the `transactions` stream when **Add `user_id` to Transactions (slower)** is on.
+- [Transactions (GraphQL)](https://shopify.dev/docs/api/admin-graphql/latest/objects/OrderTransaction) — Used for the `transactions` stream by default. Doesn't populate `user_id`. See [Transactions created before their order](#transactions-created-before-their-order).
 
 ### Entity-Relationship Diagram (ERD)
 <EntityRelationshipDiagram></EntityRelationshipDiagram>
@@ -320,7 +320,11 @@ If you synced one of these streams on an earlier connector version and suspect m
 
 #### Transactions created before their order
 
-Some payment methods, such as offsite or redirect gateways like Klarna, create the transaction a few minutes before Shopify creates the order. Starting in version 4.2.6, the connector emits these transactions when their order is first synced. Such a transaction can be emitted again on following syncs until a newer transaction moves the cursor past the order's creation time, so destinations without deduplication, such as **Incremental | Append**, may see duplicate rows. Upgrading doesn't backfill transactions that earlier versions skipped, so refresh the `transactions` stream or clear its state to recover them.
+With offsite or redirect payment gateways, such as Klarna or Mollie, Shopify can create a transaction minutes before it creates the order. The `transactions` stream uses the transaction's `created_at` as its cursor, so connector versions before 4.2.6 skipped a transaction if the saved cursor had already moved past its `created_at` by the time its order appeared. Starting in version 4.2.6, the connector also emits a transaction that's older than the cursor if its order was created at or after the cursor.
+
+This fix applies to the default GraphQL version of the `transactions` stream. It doesn't apply when **Add `user_id` to Transactions (slower)** is on, because the connector then reads transactions from the REST API.
+
+The connector can emit such a transaction again on later syncs until the cursor moves past its order's creation time, so destinations that use **Incremental | Append** may get duplicate rows. Upgrading doesn't backfill transactions that earlier versions skipped. To recover them, [refresh](/platform/operator-guides/refreshes) the `transactions` stream.
 
 #### BULK job checkpoint collisions
 
